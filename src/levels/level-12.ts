@@ -1,4 +1,4 @@
-import type { Cell, Level } from '../game/types'
+import type { Cell, InputEvent, Level } from '../game/types'
 import { cellsFrom, stateFrom } from './solution-helpers'
 
 const cols = 10
@@ -80,6 +80,12 @@ const solutionState = stateFrom(
   },
 )
 
+/** 从第 15 tick 起按位给出 A 的波形，前面保持 A=0 */
+const pulses = (bits: string): InputEvent[] => [
+  { tick: 0, values: { A: 0 } },
+  ...[...bits].map((bit, i): InputEvent => ({ tick: 15 + i, values: { A: bit === '1' ? 1 : 0 } })),
+]
+
 /**
  * 第十二关：脉冲过滤器。宽度 1～2 tick 的脉冲被吃掉，3 tick 及以上的原样通过，
  * 只是整体晚 5 tick（前沿晚 5，宽度不变）。
@@ -139,6 +145,26 @@ export const level12: Level = {
         { from: 10, to: 19, outputs: { Y: 0 } },
         { from: 20, to: 24, outputs: { Y: 1 } },
         { from: 25, to: 35, outputs: { Y: 0 } },
+      ],
+    },
+    {
+      // 只看首尾两拍的电路会把 1 0 1 当成 3 tick 宽的脉冲放过去
+      name: '两个 1 tick 脉冲隔 1 tick 不输出',
+      events: pulses('1010'),
+      checks: [{ from: 10, to: 30, outputs: { Y: 0 } }],
+    },
+    {
+      name: '两个 2 tick 脉冲隔 1 tick 不输出',
+      events: pulses('110110'),
+      checks: [{ from: 10, to: 32, outputs: { Y: 0 } }],
+    },
+    {
+      name: '宽脉冲后紧跟窄脉冲，只放行宽的',
+      events: pulses('111010'),
+      checks: [
+        { from: 10, to: 19, outputs: { Y: 0 } },
+        { from: 20, to: 22, outputs: { Y: 1 } },
+        { from: 23, to: 35, outputs: { Y: 0 } },
       ],
     },
   ],
